@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -117,12 +118,44 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+:root {
+  --color-bg: #f0ede8;
+  --color-bg-card: #ffffff;
+  --color-primary: #2a5f52;
+  --color-primary-hover: #1d4a3e;
+  --color-primary-light: #e8f4f0;
+  --color-primary-border: #9fd4c5;
+  --color-text-primary: #1a2e28;
+  --color-text-secondary: #6b7e79;
+  --color-text-muted: #8a9e99;
+  --color-success: #639922;
+  --color-success-bg: #e8f4f0;
+  --color-success-border: #c0dd97;
+  --color-danger: #993c1d;
+  --color-danger-bg: #fdf0ef;
+  --color-danger-border: #f5c4b3;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --nav-height: 60px;
+  --max-width: 1200px;
+  --border-radius-sm: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-full: 9999px;
+  --shadow-card: 0 2px 12px rgba(42, 95, 82, 0.08);
+  --shadow-card-hover: 0 4px 20px rgba(42, 95, 82, 0.12);
+  --transition-base: 200ms ease;
+  --transition-fast: 150ms ease;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
   }
   html {
     @apply font-sans;
