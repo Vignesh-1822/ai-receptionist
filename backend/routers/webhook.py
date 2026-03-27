@@ -1,11 +1,11 @@
 # This router handles incoming Retell call events (call_started, call_ended, etc.)
 # The call_ended event is where we extract booking details from the transcript
-# and save the booking to Supabase (wired up in a later step).
+# and save the booking to Supabase.
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Any
 from models.booking import BookingCreate
+from services.booking_service import save_booking
 
 router = APIRouter()
 
@@ -40,9 +40,12 @@ async def retell_webhook(event: RetellEvent):
         transcript = event.call.get("transcript", "")
         print("Call ended, extracting booking details...")
 
-        booking = extract_booking_details(transcript, call_id)
-        print(f"Extracted booking: {booking}")
-        return {"status": "ok", "booking": booking.model_dump()}
+        booking_create = extract_booking_details(transcript, call_id)
+        print(f"Extracted booking: {booking_create}")
+
+        saved = await save_booking(booking_create)
+        print(f"Booking saved: {saved}")
+        return {"status": "ok", "booking": saved.model_dump()}
 
     print(f"Unhandled event: {event.event}")
     return {"status": "ok"}
