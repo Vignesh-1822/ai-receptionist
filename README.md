@@ -21,6 +21,3 @@ who checks availability and confirms appointments in under 60 seconds.
 
 ## Local Setup
 [fill this in as you build]
-
-## Work Authorization
-F-1 OPT available May 2026 | STEM OPT eligible

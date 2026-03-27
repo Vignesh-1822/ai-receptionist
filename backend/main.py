@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from routers import webhook
 
 load_dotenv()
 
-app = FastAPI(title="AI Receptionist API")
+app = FastAPI(title="Kanmani Clinic API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -17,4 +18,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "AI Receptionist API is running"}
+    return {"status": "ok", "message": "Kanmani Clinic API running"}
+
+
+app.include_router(webhook.router, prefix="/webhook")
