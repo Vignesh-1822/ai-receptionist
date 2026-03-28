@@ -1,5 +1,4 @@
-function requireEnv(name: string): string {
-  const value = process.env[name];
+function requireEnv(name: string, value: string | undefined): string {
   if (!value) {
     throw new Error(
       `Missing required environment variable: ${name}\n` +
@@ -10,7 +9,7 @@ function requireEnv(name: string): string {
 }
 
 export const env = {
-  retellApiKey: requireEnv("NEXT_PUBLIC_RETELL_API_KEY"),
-  retellAgentId: requireEnv("NEXT_PUBLIC_RETELL_AGENT_ID"),
-  apiUrl: requireEnv("NEXT_PUBLIC_API_URL"),
+  retellApiKey: requireEnv("NEXT_PUBLIC_RETELL_API_KEY", process.env.NEXT_PUBLIC_RETELL_API_KEY),
+  retellAgentId: requireEnv("NEXT_PUBLIC_RETELL_AGENT_ID", process.env.NEXT_PUBLIC_RETELL_AGENT_ID),
+  apiUrl: requireEnv("NEXT_PUBLIC_API_URL", process.env.NEXT_PUBLIC_API_URL),
 } as const;

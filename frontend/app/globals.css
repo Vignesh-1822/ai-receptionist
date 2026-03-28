@@ -1,9 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+
+html, body {
+  box-sizing: border-box;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -135,8 +138,10 @@
   --color-danger-bg: #fdf0ef;
   --color-danger-border: #f5c4b3;
   --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --nav-height: 60px;
+  --font-sans: var(--font-manrope, 'Manrope'), system-ui, sans-serif;
+  --nav-height: 64px;
+  --nav-logo-max-height: 2.25rem;
+  --nav-logo-max-width: 11rem;
   --max-width: 1200px;
   --border-radius-sm: 6px;
   --border-radius-md: 8px;
@@ -156,8 +161,5 @@
     font-family: var(--font-sans);
     background: var(--color-bg);
     color: var(--color-text-primary);
-  }
-  html {
-    @apply font-sans;
   }
 }
