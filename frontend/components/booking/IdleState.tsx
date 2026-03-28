@@ -1,69 +1,12 @@
 "use client";
 
+import { Clock, CalendarDays, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/shared/StatCard";
 
 interface IdleStateProps {
   onStart: () => void;
   isLoading: boolean;
-}
-
-function ClockIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-function Spinner() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-      className="animate-spin"
-    >
-      <path d="M12 2a10 10 0 0 1 10 10" />
-    </svg>
-  );
 }
 
 export function IdleState({ onStart, isLoading }: IdleStateProps) {
@@ -100,7 +43,7 @@ export function IdleState({ onStart, isLoading }: IdleStateProps) {
       >
         {isLoading ? (
           <>
-            <Spinner />
+            <Loader2 size={18} className="animate-spin" aria-hidden="true" />
             Connecting…
           </>
         ) : (
@@ -121,13 +64,13 @@ export function IdleState({ onStart, isLoading }: IdleStateProps) {
         className="mt-2 flex w-full gap-4"
       >
         <div role="listitem" className="flex min-w-0 flex-1">
-          <StatCard icon={<ClockIcon />} label="Avg booking time" value="47s" />
+          <StatCard icon={<Clock size={20} />} label="Avg booking time" value="47s" />
         </div>
         <div role="listitem" className="flex min-w-0 flex-1">
-          <StatCard icon={<CalendarIcon />} label="Available today" value="3 slots" />
+          <StatCard icon={<CalendarDays size={20} />} label="Available today" value="3 slots" />
         </div>
         <div role="listitem" className="flex min-w-0 flex-1">
-          <StatCard icon={<ClockIcon />} label="Next opening" value="2:00 PM" />
+          <StatCard icon={<Clock size={20} />} label="Next opening" value="2:00 PM" />
         </div>
       </div>
     </div>
