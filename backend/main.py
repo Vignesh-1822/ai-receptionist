@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import webhook
+from routers import webhook, availability
 
 load_dotenv()
 
@@ -22,3 +22,4 @@ def root():
 
 
 app.include_router(webhook.router, prefix="/webhook")
+app.include_router(availability.router, prefix="/api")

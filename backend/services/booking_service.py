@@ -1,4 +1,6 @@
 import os
+import json
+import anthropic
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import HTTPException
@@ -10,6 +12,67 @@ supabase: Client = create_client(
     os.environ["SUPABASE_URL"],
     os.environ["SUPABASE_SERVICE_KEY"],
 )
+
+_anthropic = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+_SYSTEM_PROMPT = (
+    "You are a data extraction assistant. Extract booking details "
+    "from a dental clinic appointment conversation transcript. "
+    "Return ONLY a valid JSON object with these exact fields:\n"
+    "{\n"
+    '  "customer_name": string,\n'
+    '  "phone_number": string (or "not provided" if missing),\n'
+    '  "service": string (one of: Teeth Cleaning, Dental Consultation, '
+    "Cavity Filling, Teeth Whitening, Emergency Appointment),\n"
+    '  "date": string (e.g. "Monday", "Tuesday", or specific date),\n'
+    '  "time": string (e.g. "2:00 PM", "10:30 AM"),\n'
+    '  "call_id": string\n'
+    "}\n"
+    "If any field is unclear from the transcript, use a sensible default. "
+    "Return only the JSON, no markdown, no explanation."
+)
+
+_FALLBACK = lambda call_id: BookingCreate(
+    customer_name="Guest Patient",
+    phone_number="not provided",
+    service="Dental Consultation",
+    date="To be confirmed",
+    time="To be confirmed",
+    call_id=call_id,
+)
+
+
+async def extract_booking_from_transcript(
+    transcript: str, call_id: str
+) -> BookingCreate:
+    try:
+        message = _anthropic.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=_SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        f"Extract booking details from this transcript:\n\n"
+                        f"{transcript}\n\nCall ID: {call_id}"
+                    ),
+                }
+            ],
+        )
+        raw = message.content[0].text.strip()
+        data = json.loads(raw)
+        return BookingCreate(
+            customer_name=data.get("customer_name", "Guest Patient"),
+            phone_number=data.get("phone_number", "not provided"),
+            service=data.get("service", "Dental Consultation"),
+            date=data.get("date", "To be confirmed"),
+            time=data.get("time", "To be confirmed"),
+            call_id=call_id,
+        )
+    except Exception as e:
+        print(f"Failed to extract booking from transcript: {e}")
+        return _FALLBACK(call_id)
 
 
 async def save_booking(booking: BookingCreate) -> Booking:

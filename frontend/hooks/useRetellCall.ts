@@ -5,7 +5,7 @@ import { retellClient, startCall as retellStartCall, endCall as retellEndCall } 
 import { env } from "@/lib/env";
 import type { Booking } from "@/types/booking";
 
-export type CallState = "idle" | "active" | "confirmed";
+export type CallState = "idle" | "active" | "confirmed" | "cancelled";
 
 export interface UseRetellCallReturn {
   callState: CallState;
@@ -15,6 +15,7 @@ export interface UseRetellCallReturn {
   error: string | null;
   startCall: () => Promise<void>;
   endCall: () => void;
+  resetToIdle: () => void;
 }
 
 export function useRetellCall(): UseRetellCallReturn {
@@ -74,12 +75,17 @@ export function useRetellCall(): UseRetellCallReturn {
 
   const endCall = useCallback(() => {
     retellEndCall();
-    setCallState("idle");
+    setCallState("cancelled");
     setIsSpeaking(false);
     setBooking(null);
     setIsLoading(false);
     setError(null);
   }, []);
 
-  return { callState, isSpeaking, booking, isLoading, error, startCall, endCall };
+  const resetToIdle = useCallback(() => {
+    setCallState("idle");
+    setError(null);
+  }, []);
+
+  return { callState, isSpeaking, booking, isLoading, error, startCall, endCall, resetToIdle };
 }
