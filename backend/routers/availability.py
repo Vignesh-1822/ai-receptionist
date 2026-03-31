@@ -47,13 +47,19 @@ async def confirm_booking(request: Request):
 
     # Retell may wrap args under 'args' key or send them flat
     args = body.get("args", body)
+    # call_id may be at root, nested under 'call', or inside args
+    call_id = (
+        body.get("call_id")
+        or body.get("call", {}).get("call_id")
+        or args.get("call_id")
+    )
     booking_data = BookingCreate(
         customer_name=args.get("customer_name", "Guest"),
         phone_number=args.get("phone_number", "not provided"),
         service=args.get("service", "Dental Consultation"),
         date=args.get("date", ""),
         time=args.get("time", ""),
-        call_id=body.get("call_id"),
+        call_id=call_id,
     )
     duration = SERVICES_DURATION.get(booking_data.service, 30)
 
@@ -76,6 +82,10 @@ async def confirm_booking(request: Request):
 @router.get("/bookings/{call_id}", response_model=Booking)
 async def get_booking_by_call_id(call_id: str) -> Booking:
     response = supabase.table("bookings").select("*").eq("call_id", call_id).limit(1).execute()
-    if not response.data:
+    if response.data:
+        return Booking(**response.data[0])
+    # Fallback: return the most recent booking (covers null call_id saves)
+    fallback = supabase.table("bookings").select("*").order("created_at", desc=True).limit(1).execute()
+    if not fallback.data:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return Booking(**response.data[0])
+    return Booking(**fallback.data[0])

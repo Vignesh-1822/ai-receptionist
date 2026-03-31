@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { retellClient, startCall as retellStartCall, endCall as retellEndCall } from "@/lib/retell";
 import { env } from "@/lib/env";
 import type { Booking } from "@/types/booking";
@@ -24,6 +24,20 @@ export function useRetellCall(): UseRetellCallReturn {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const callIdRef = useRef<string | null>(null);
+
+  const fetchBooking = useCallback(async (callId: string) => {
+    // Wait 2s for the webhook to finish saving the booking
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const res = await fetch(`${env.apiUrl}/api/bookings/${callId}`);
+      if (res.ok) {
+        setBooking(await res.json());
+      }
+    } catch {
+      // booking fetch failed — confirmed screen still shows without details
+    }
+  }, []);
 
   const startCall = useCallback(async () => {
     setIsLoading(true);
@@ -35,27 +49,15 @@ export function useRetellCall(): UseRetellCallReturn {
         setIsLoading(false);
       });
 
-      retellClient.on("agent_start_talking", () => {
-        setIsSpeaking(true);
-      });
-
-      retellClient.on("agent_stop_talking", () => {
-        setIsSpeaking(false);
-      });
+      retellClient.on("agent_start_talking", () => setIsSpeaking(true));
+      retellClient.on("agent_stop_talking", () => setIsSpeaking(false));
 
       retellClient.on("call_ended", () => {
         setCallState("confirmed");
         setIsSpeaking(false);
-        setBooking({
-          id: "test-001",
-          customer_name: "Test Patient",
-          phone_number: "",
-          service: "Dental Consultation",
-          date: "Thursday Mar 27",
-          time: "2:00 PM",
-          status: "confirmed",
-          created_at: new Date().toISOString(),
-        });
+        if (callIdRef.current) {
+          fetchBooking(callIdRef.current);
+        }
       });
 
       retellClient.on("error", (err: Error) => {
@@ -64,14 +66,15 @@ export function useRetellCall(): UseRetellCallReturn {
         setIsLoading(false);
       });
 
-      await retellStartCall(env.retellAgentId);
+      const callId = await retellStartCall(env.retellAgentId);
+      callIdRef.current = callId;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start call.";
       setError(message);
       setCallState("idle");
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchBooking]);
 
   const endCall = useCallback(() => {
     retellEndCall();
