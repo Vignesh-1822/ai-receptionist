@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta, date, time
 from zoneinfo import ZoneInfo
 
@@ -9,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 _CALENDAR_ID = os.environ["GOOGLE_CALENDAR_ID"]
-_SERVICE_ACCOUNT_FILE = os.environ["GOOGLE_SERVICE_ACCOUNT_FILE"]
 _SCOPES = ["https://www.googleapis.com/auth/calendar"]
 _TIMEZONE = ZoneInfo("Asia/Kolkata")  # IST — adjust if clinic is in a different zone
 
@@ -32,9 +32,18 @@ _WEEKDAY_NAMES = {
 
 
 def _get_calendar_service():
-    credentials = service_account.Credentials.from_service_account_file(
-        _SERVICE_ACCOUNT_FILE, scopes=_SCOPES
-    )
+    # Prefer JSON string env var (Railway/prod), fall back to file path (local)
+    sa_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if sa_json:
+        info = json.loads(sa_json)
+        credentials = service_account.Credentials.from_service_account_info(
+            info, scopes=_SCOPES
+        )
+    else:
+        sa_file = os.environ["GOOGLE_SERVICE_ACCOUNT_FILE"]
+        credentials = service_account.Credentials.from_service_account_file(
+            sa_file, scopes=_SCOPES
+        )
     return build("calendar", "v3", credentials=credentials)
 
 

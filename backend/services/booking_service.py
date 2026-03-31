@@ -1,6 +1,6 @@
 import os
 import json
-import anthropic
+from openai import OpenAI
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import HTTPException
@@ -13,7 +13,7 @@ supabase: Client = create_client(
     os.environ["SUPABASE_SERVICE_KEY"],
 )
 
-_anthropic = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+_openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 _SYSTEM_PROMPT = (
     "You are a data extraction assistant. Extract booking details "
@@ -46,21 +46,21 @@ async def extract_booking_from_transcript(
     transcript: str, call_id: str
 ) -> BookingCreate:
     try:
-        message = _anthropic.messages.create(
-            model="claude-sonnet-4-6",
+        message = _openai.chat.completions.create(
+            model="gpt-4o-mini",
             max_tokens=512,
-            system=_SYSTEM_PROMPT,
             messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
                 {
                     "role": "user",
                     "content": (
                         f"Extract booking details from this transcript:\n\n"
                         f"{transcript}\n\nCall ID: {call_id}"
                     ),
-                }
+                },
             ],
         )
-        raw = message.content[0].text.strip()
+        raw = message.choices[0].message.content.strip()
         data = json.loads(raw)
         return BookingCreate(
             customer_name=data.get("customer_name", "Guest Patient"),

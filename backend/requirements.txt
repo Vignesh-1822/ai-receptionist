@@ -2,7 +2,7 @@ fastapi
 uvicorn
 supabase
 python-dotenv
-anthropic
+openai
 pydantic
 google-api-python-client
 google-auth
