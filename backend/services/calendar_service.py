@@ -11,7 +11,7 @@ load_dotenv()
 
 _CALENDAR_ID = os.environ["GOOGLE_CALENDAR_ID"]
 _SCOPES = ["https://www.googleapis.com/auth/calendar"]
-_TIMEZONE = ZoneInfo("Asia/Kolkata")  # IST — adjust if clinic is in a different zone
+_TIMEZONE = ZoneInfo("America/Chicago")  # CST/CDT
 
 # Clinic hours: (open_hour, open_minute, close_hour, close_minute)
 # None means closed
