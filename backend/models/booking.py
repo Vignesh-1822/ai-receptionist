@@ -12,6 +12,7 @@ class Booking(BaseModel):
     status: str = "confirmed"
     created_at: Optional[str] = None
     call_id: Optional[str] = None
+    google_event_id: Optional[str] = None
 
 
 class BookingCreate(BaseModel):
@@ -21,3 +22,4 @@ class BookingCreate(BaseModel):
     date: str
     time: str
     call_id: Optional[str] = None
+    google_event_id: Optional[str] = None

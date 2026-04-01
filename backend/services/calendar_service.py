@@ -149,3 +149,36 @@ def create_appointment(
     ).execute()
 
     return created["id"]
+
+
+def update_appointment(
+    event_id: str,
+    date_str: str,
+    time_str: str,
+    duration_minutes: int,
+) -> None:
+    """Update an existing Google Calendar event's start/end time."""
+    appt_date = _parse_date(date_str)
+    start_time = datetime.strptime(time_str.strip(), "%I:%M %p").time()
+    start_dt = datetime.combine(appt_date, start_time, tzinfo=_TIMEZONE)
+    end_dt = start_dt + timedelta(minutes=duration_minutes)
+
+    patch_body = {
+        "start": {"dateTime": start_dt.isoformat(), "timeZone": str(_TIMEZONE)},
+        "end": {"dateTime": end_dt.isoformat(), "timeZone": str(_TIMEZONE)},
+    }
+    service_client = _get_calendar_service()
+    service_client.events().patch(
+        calendarId=_CALENDAR_ID,
+        eventId=event_id,
+        body=patch_body,
+    ).execute()
+
+
+def delete_appointment(event_id: str) -> None:
+    """Delete a Google Calendar event."""
+    service_client = _get_calendar_service()
+    service_client.events().delete(
+        calendarId=_CALENDAR_ID,
+        eventId=event_id,
+    ).execute()

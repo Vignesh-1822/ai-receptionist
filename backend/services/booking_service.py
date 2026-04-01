@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import HTTPException
 from models.booking import Booking, BookingCreate
+from services.constants import SERVICES_DURATION
+from services.calendar_service import update_appointment, delete_appointment
 
 load_dotenv()
 
@@ -83,3 +85,60 @@ async def save_booking(booking: BookingCreate) -> Booking:
     except Exception as e:
         print(f"Failed to save booking: {e}")
         raise HTTPException(status_code=500, detail="Failed to save booking")
+
+
+async def get_bookings_by_phone(phone_number: str) -> list[Booking]:
+    response = (
+        supabase.table("bookings")
+        .select("*")
+        .eq("phone_number", phone_number)
+        .eq("status", "confirmed")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return [Booking(**row) for row in response.data]
+
+
+async def reschedule_booking(booking_id: str, new_date: str, new_time: str) -> Booking:
+    response = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    record = response.data[0]
+    google_event_id = record.get("google_event_id")
+
+    if google_event_id:
+        try:
+            duration = SERVICES_DURATION.get(record["service"], 30)
+            update_appointment(google_event_id, new_date, new_time, duration)
+        except Exception as e:
+            print(f"Calendar update failed (continuing with DB update): {e}")
+
+    updated = (
+        supabase.table("bookings")
+        .update({"date": new_date, "time": new_time})
+        .eq("id", booking_id)
+        .execute()
+    )
+    return Booking(**updated.data[0])
+
+
+async def cancel_booking(booking_id: str) -> Booking:
+    response = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    google_event_id = response.data[0].get("google_event_id")
+    if google_event_id:
+        try:
+            delete_appointment(google_event_id)
+        except Exception as e:
+            print(f"Calendar delete failed (continuing with DB update): {e}")
+
+    updated = (
+        supabase.table("bookings")
+        .update({"status": "cancelled"})
+        .eq("id", booking_id)
+        .execute()
+    )
+    return Booking(**updated.data[0])
