@@ -4,10 +4,11 @@ import { PhoneOff } from "lucide-react";
 import { Navbar } from "@/components/shared/Navbar";
 import { IdleState } from "@/components/booking/IdleState";
 import { ActiveCall } from "@/components/booking/ActiveCall";
+import { ConfirmationCard } from "@/components/booking/ConfirmationCard";
 import { useRetellCall } from "@/hooks/useRetellCall";
 
 export default function Home() {
-  const { callState, isSpeaking, isLoading, startCall, endCall, resetToIdle } =
+  const { callState, isSpeaking, isLoading, booking, startCall, endCall, resetToIdle } =
     useRetellCall();
 
   return (
@@ -51,9 +52,7 @@ export default function Home() {
         )}
 
         {callState === "confirmed" && (
-          <div className="text-center text-[var(--color-text-secondary)] text-lg animate-pulse">
-            Redirecting…
-          </div>
+          <ConfirmationCard booking={booking} onReset={resetToIdle} />
         )}
       </main>
     </div>

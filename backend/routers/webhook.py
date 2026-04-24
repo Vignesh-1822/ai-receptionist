@@ -3,11 +3,12 @@
 #   call_ended     — extract booking from transcript via Claude, save to Supabase
 #   function_call  — Aria calling check_availability or confirm_booking mid-call
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from pydantic import BaseModel
 from models.booking import BookingCreate
 from services.booking_service import extract_booking_from_transcript, save_booking
 from services.calendar_service import get_available_slots, create_appointment
+from services.hubspot_service import sync_booking_to_hubspot
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ class RetellEvent(BaseModel):
 
 
 @router.post("/retell")
-async def retell_webhook(event: RetellEvent):
+async def retell_webhook(event: RetellEvent, background_tasks: BackgroundTasks):
     print(f"Retell event received: {event.event}")
 
     if event.event == "call_started":
@@ -79,6 +80,8 @@ async def retell_webhook(event: RetellEvent):
             )
             saved = await save_booking(booking_create)
             print(f"Booking confirmed: {saved.id}")
+
+            background_tasks.add_task(sync_booking_to_hubspot, saved)
 
             return {
                 "result": f"Booking confirmed! ID: {saved.id}",

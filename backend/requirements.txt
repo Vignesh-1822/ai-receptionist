@@ -6,3 +6,4 @@ openai
 pydantic
 google-api-python-client
 google-auth
+hubspot-api-client
