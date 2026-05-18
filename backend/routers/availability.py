@@ -69,6 +69,8 @@ async def confirm_booking(request: Request):
     )
     duration = SERVICES_DURATION.get(booking_data.service, 30)
 
+    saved = await save_booking(booking_data)
+
     try:
         event_id = create_appointment(
             customer_name=booking_data.customer_name,
@@ -78,12 +80,12 @@ async def confirm_booking(request: Request):
             duration_minutes=duration,
             phone_number=booking_data.phone_number,
         )
-        booking_data.google_event_id = event_id
+        supabase.table("bookings").update({"google_event_id": event_id}).eq("id", saved.id).execute()
+        saved.google_event_id = event_id
     except Exception as e:
-        print(f"[confirm_booking] calendar error: {e}")
-        raise HTTPException(status_code=500, detail=f"Calendar error: {e}")
+        print(f"[confirm_booking] calendar error (booking saved): {e}")
 
-    return await save_booking(booking_data)
+    return saved
 
 
 @router.post("/get-appointments")
