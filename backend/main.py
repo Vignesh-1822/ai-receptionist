@@ -1,3 +1,10 @@
+import os
+import certifi
+
+# Fix macOS SSL cert issue — must be set before any HTTPS connections are made
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
