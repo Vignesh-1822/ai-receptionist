@@ -25,22 +25,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        <ul
-          role="list"
-          className="col-start-2 flex list-none gap-8 m-0 justify-self-center p-0"
-        >
-          {(["Home", "Services", "Contact"] as const).map((link) => (
-            <li key={link}>
-              <Link
-                href={link === "Home" ? "/" : `#${link.toLowerCase()}`}
-                aria-label={`Go to ${link}`}
-                className="text-[0.9375rem] text-[var(--color-text-secondary)] no-underline transition-colors duration-[var(--transition-fast)] hover:text-[var(--color-text-primary)]"
-              >
-                {link}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="col-start-2" />
 
         <div className="min-w-0" aria-hidden="true" />
       </div>
