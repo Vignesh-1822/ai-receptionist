@@ -13,7 +13,7 @@ export default function EnterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(false);
+    setError("");
 
     const res = await fetch("/api/auth", {
       method: "POST",
