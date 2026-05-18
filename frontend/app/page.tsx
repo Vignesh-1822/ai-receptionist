@@ -9,7 +9,7 @@ import { ConfirmationCard } from "@/components/booking/ConfirmationCard";
 import { useRetellCall } from "@/hooks/useRetellCall";
 
 export default function Home() {
-  const { callState, isSpeaking, isLoading, booking, startCall, endCall, resetToIdle } =
+  const { callState, isSpeaking, isUserSpeaking, isLoading, booking, startCall, endCall, resetToIdle } =
     useRetellCall();
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function Home() {
         )}
 
         {callState === "active" && (
-          <ActiveCall isSpeaking={isSpeaking} onEnd={endCall} />
+          <ActiveCall isSpeaking={isSpeaking} isUserSpeaking={isUserSpeaking} onEnd={endCall} />
         )}
 
         {callState === "cancelled" && (

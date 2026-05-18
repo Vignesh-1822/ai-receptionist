@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { retellClient, startCall as retellStartCall, endCall as retellEndCall } from "@/lib/retell";
 import { env } from "@/lib/env";
 import type { Booking } from "@/types/booking";
@@ -10,6 +10,7 @@ export type CallState = "idle" | "active" | "confirmed" | "cancelled";
 export interface UseRetellCallReturn {
   callState: CallState;
   isSpeaking: boolean;
+  isUserSpeaking: boolean;
   booking: Booking | null;
   isLoading: boolean;
   error: string | null;
@@ -21,13 +22,56 @@ export interface UseRetellCallReturn {
 export function useRetellCall(): UseRetellCallReturn {
   const [callState, setCallState] = useState<CallState>("idle");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const callIdRef = useRef<string | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+
+  // Mic level analyser — runs while call is active
+  useEffect(() => {
+    if (callState !== "active") {
+      setIsUserSpeaking(false);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) micStreamRef.current.getTracks().forEach((t) => t.stop());
+      return;
+    }
+
+    let cancelled = false;
+
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then((stream) => {
+      if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+      micStreamRef.current = stream;
+
+      const ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.4;
+      source.connect(analyser);
+
+      const data = new Uint8Array(analyser.frequencyBinCount);
+
+      function tick() {
+        if (cancelled) return;
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setIsUserSpeaking(avg > 8);
+        animFrameRef.current = requestAnimationFrame(tick);
+      }
+      tick();
+    }).catch(() => {});
+
+    return () => {
+      cancelled = true;
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) micStreamRef.current.getTracks().forEach((t) => t.stop());
+    };
+  }, [callState]);
 
   const fetchBooking = useCallback(async (callId: string) => {
-    // Wait 2s for the webhook to finish saving the booking
     await new Promise((r) => setTimeout(r, 2000));
     try {
       const res = await fetch(`${env.apiUrl}/api/bookings/${callId}`);
@@ -42,8 +86,15 @@ export function useRetellCall(): UseRetellCallReturn {
   const startCall = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setBooking(null); // clear any previous booking before starting
 
     try {
+      await navigator.mediaDevices.getUserMedia({ audio: true }).then((s) =>
+        s.getTracks().forEach((t) => t.stop())
+      );
+
+      retellClient.removeAllListeners();
+
       retellClient.on("call_started", () => {
         setCallState("active");
         setIsLoading(false);
@@ -69,8 +120,16 @@ export function useRetellCall(): UseRetellCallReturn {
       const callId = await retellStartCall(env.retellAgentId);
       callIdRef.current = callId;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start call.";
-      setError(message);
+      const isMicDenied =
+        err instanceof DOMException &&
+        (err.name === "NotAllowedError" || err.name === "PermissionDeniedError");
+      setError(
+        isMicDenied
+          ? "Microphone access is required. Please allow it and try again."
+          : err instanceof Error
+          ? err.message
+          : "Failed to start call."
+      );
       setCallState("idle");
       setIsLoading(false);
     }
@@ -80,6 +139,7 @@ export function useRetellCall(): UseRetellCallReturn {
     retellEndCall();
     setCallState("cancelled");
     setIsSpeaking(false);
+    setIsUserSpeaking(false);
     setBooking(null);
     setIsLoading(false);
     setError(null);
@@ -90,5 +150,5 @@ export function useRetellCall(): UseRetellCallReturn {
     setError(null);
   }, []);
 
-  return { callState, isSpeaking, booking, isLoading, error, startCall, endCall, resetToIdle };
+  return { callState, isSpeaking, isUserSpeaking, booking, isLoading, error, startCall, endCall, resetToIdle };
 }

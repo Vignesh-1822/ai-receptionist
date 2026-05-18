@@ -5,6 +5,7 @@ import { Mic, PhoneOff } from "lucide-react";
 
 interface ActiveCallProps {
   isSpeaking: boolean;
+  isUserSpeaking: boolean;
   onEnd: () => void;
 }
 
@@ -24,12 +25,19 @@ const WAVE_BARS: { duration: number; delay: number }[] = [
   { duration: 0.9, delay: 0.1 },
 ];
 
-export function ActiveCall({ isSpeaking, onEnd }: ActiveCallProps) {
+export function ActiveCall({ isSpeaking, isUserSpeaking, onEnd }: ActiveCallProps) {
   function handleEndCall() {
     if (window.confirm("Are you sure you want to end the call?")) {
       onEnd();
     }
   }
+
+  const label = isSpeaking ? "Aria is speaking…" : isUserSpeaking ? "Listening to you…" : "Aria is listening…";
+  const sublabel = isSpeaking
+    ? "Aria is responding to you"
+    : isUserSpeaking
+    ? "Go ahead, Aria is listening"
+    : "Speak naturally — Aria will guide you";
 
   return (
     <div className="flex flex-col items-center text-center gap-6 max-w-[520px] mx-auto">
@@ -47,20 +55,18 @@ export function ActiveCall({ isSpeaking, onEnd }: ActiveCallProps) {
 
       {/* Heading */}
       <h2 className="font-[family-name:var(--font-serif)] text-4xl md:text-[2.5rem] text-[var(--color-text-primary)] leading-[1.2] m-0 transition-all duration-300">
-        {isSpeaking ? "Aria is speaking…" : "Aria is listening…"}
+        {label}
       </h2>
 
       {/* Subtext */}
       <p className="text-sm text-[var(--color-text-muted)] m-0 transition-all duration-300">
-        {isSpeaking
-          ? "Aria is responding to you"
-          : "Speak naturally — Aria will guide you"}
+        {sublabel}
       </p>
 
       {/* Mic circle with rings */}
       <div
         className="relative flex items-center justify-center w-[200px] h-[200px]"
-        aria-label={isSpeaking ? "Aria is speaking" : "Aria is listening"}
+        aria-label={label}
         role="status"
       >
         {RINGS.map(({ size, baseOpacity, delay }) => (
@@ -87,22 +93,37 @@ export function ActiveCall({ isSpeaking, onEnd }: ActiveCallProps) {
           />
         ))}
 
-        {/* Center mic circle */}
-        <div className="relative z-10 flex items-center justify-center w-[76px] h-[76px] rounded-full bg-[var(--color-bg-card)] shadow-[var(--shadow-card)] text-[var(--color-primary)]">
+        {/* Center mic circle — pulses green when user is speaking */}
+        <motion.div
+          className="relative z-10 flex items-center justify-center w-[76px] h-[76px] rounded-full shadow-[var(--shadow-card)]"
+          animate={{
+            backgroundColor: isUserSpeaking
+              ? ["#94f990", "#6be868", "#94f990"]
+              : "var(--color-bg-card)",
+            scale: isUserSpeaking ? [1, 1.08, 1] : 1,
+          }}
+          transition={{
+            duration: 0.6,
+            repeat: isUserSpeaking ? Infinity : 0,
+            ease: "easeInOut",
+          }}
+          style={{ color: isUserSpeaking ? "#005614" : "var(--color-primary)" }}
+        >
           <Mic size={24} aria-hidden="true" />
-        </div>
+        </motion.div>
       </div>
 
-      {/* Waveform */}
+      {/* Waveform — animates for Aria speaking OR user speaking */}
       <div className="flex items-end gap-[3px] h-[32px]" aria-hidden="true">
         {WAVE_BARS.map(({ duration, delay }, i) => (
           <motion.div
             key={i}
-            className="w-1 rounded-[3px] bg-[var(--color-primary)]"
-            animate={{ height: isSpeaking ? [6, 28, 6] : 6 }}
+            className="w-1 rounded-[3px]"
+            style={{ backgroundColor: isUserSpeaking ? "#005614" : "var(--color-primary)" }}
+            animate={{ height: (isSpeaking || isUserSpeaking) ? [6, 28, 6] : 6 }}
             transition={{
-              duration,
-              repeat: isSpeaking ? Infinity : 0,
+              duration: isUserSpeaking ? duration * 0.6 : duration,
+              repeat: (isSpeaking || isUserSpeaking) ? Infinity : 0,
               ease: "easeInOut",
               delay,
             }}
