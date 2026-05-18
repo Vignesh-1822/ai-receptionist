@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { PhoneOff } from "lucide-react";
 import { Navbar } from "@/components/shared/Navbar";
 import { IdleState } from "@/components/booking/IdleState";
@@ -10,6 +11,10 @@ import { useRetellCall } from "@/hooks/useRetellCall";
 export default function Home() {
   const { callState, isSpeaking, isLoading, booking, startCall, endCall, resetToIdle } =
     useRetellCall();
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/`).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
