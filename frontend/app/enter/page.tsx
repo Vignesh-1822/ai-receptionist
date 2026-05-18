@@ -7,7 +7,7 @@ import { Lock } from "lucide-react";
 export default function EnterPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,7 +24,8 @@ export default function EnterPage() {
     if (res.ok) {
       router.push("/");
     } else {
-      setError(true);
+      const data = await res.json();
+      setError(data.error ?? "Incorrect password. Please try again.");
       setPassword("");
     }
     setLoading(false);
@@ -64,19 +65,20 @@ export default function EnterPage() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(false); }}
+            onChange={(e) => { setPassword(e.target.value); setError(""); }}
             autoFocus
             className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
             style={{
               backgroundColor: "#ffffff",
               border: error ? "1.5px solid #d9534f" : "1.5px solid rgba(191,200,200,0.5)",
+
               color: "#1b1c1a",
               boxShadow: "0px 4px 12px rgba(27,28,26,0.04)",
             }}
           />
           {error && (
             <p className="text-xs m-0" style={{ color: "#d9534f" }}>
-              Incorrect password. Please try again.
+              {error}
             </p>
           )}
           <button
