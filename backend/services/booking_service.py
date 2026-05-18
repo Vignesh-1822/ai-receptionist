@@ -79,7 +79,7 @@ async def extract_booking_from_transcript(
 
 async def save_booking(booking: BookingCreate) -> Booking:
     try:
-        response = supabase.table("bookings").insert(booking.model_dump()).execute()
+        response = supabase.table("bookings").insert(booking.model_dump(exclude_none=True)).execute()
         record = response.data[0]
         return Booking(**record)
     except Exception as e:
