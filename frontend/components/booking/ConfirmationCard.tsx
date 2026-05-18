@@ -53,13 +53,27 @@ export function ConfirmationCard({ booking, onReset }: ConfirmationCardProps) {
         }}
       >
         <div className="flex flex-col gap-0">
-          <DetailRow label="Name" value={booking?.customer_name ?? "—"} />
-          <Divider />
-          <DetailRow label="Service" value={booking?.service ?? "—"} />
-          <Divider />
-          <DetailRow label="Date" value={booking?.date ?? "—"} />
-          <Divider />
-          <DetailRow label="Time" value={booking?.time ?? "—"} />
+          {booking ? (
+            <>
+              <DetailRow label="Name" value={booking.customer_name} />
+              <Divider />
+              <DetailRow label="Service" value={booking.service} />
+              <Divider />
+              <DetailRow label="Date" value={booking.date} />
+              <Divider />
+              <DetailRow label="Time" value={booking.time} />
+            </>
+          ) : (
+            <>
+              <SkeletonRow />
+              <Divider />
+              <SkeletonRow />
+              <Divider />
+              <SkeletonRow />
+              <Divider />
+              <SkeletonRow />
+            </>
+          )}
         </div>
       </div>
 
@@ -167,6 +181,15 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="font-semibold text-right" style={{ color: "#1b1c1a" }}>
         {value}
       </span>
+    </div>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <div className="flex justify-between items-center py-4">
+      <div className="h-3 w-16 rounded-full animate-pulse" style={{ backgroundColor: "rgba(191,200,200,0.4)" }} />
+      <div className="h-3 w-28 rounded-full animate-pulse" style={{ backgroundColor: "rgba(191,200,200,0.4)" }} />
     </div>
   );
 }

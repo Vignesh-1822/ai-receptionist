@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
 from models.booking import Booking, BookingCreate
 from services.calendar_service import get_available_slots, create_appointment
@@ -10,6 +10,7 @@ from services.booking_service import (
     cancel_booking,
 )
 from services.constants import SERVICES_DURATION
+from services.hubspot_service import sync_booking_to_hubspot
 
 router = APIRouter()
 
@@ -49,7 +50,7 @@ async def check_availability(request: Request):
 
 
 @router.post("/confirm-booking")
-async def confirm_booking(request: Request):
+async def confirm_booking(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
     print(f"[confirm_booking] body: {body}")
 
@@ -70,6 +71,7 @@ async def confirm_booking(request: Request):
     duration = SERVICES_DURATION.get(booking_data.service, 30)
 
     saved = await save_booking(booking_data)
+    background_tasks.add_task(sync_booking_to_hubspot, saved)
 
     try:
         event_id = create_appointment(
