@@ -32,12 +32,8 @@ export function ActiveCall({ isSpeaking, isUserSpeaking, onEnd }: ActiveCallProp
     }
   }
 
-  const label = isSpeaking ? "Aria is speaking…" : isUserSpeaking ? "Listening to you…" : "Aria is listening…";
-  const sublabel = isSpeaking
-    ? "Aria is responding to you"
-    : isUserSpeaking
-    ? "Go ahead, Aria is listening"
-    : "Speak naturally — Aria will guide you";
+  const label = isSpeaking ? "Aria is speaking…" : "Aria is listening…";
+  const sublabel = isSpeaking ? "Aria is responding to you" : "Speak naturally — Aria will guide you";
 
   return (
     <div className="flex flex-col items-center text-center gap-6 max-w-[520px] mx-auto">
