@@ -8,8 +8,7 @@ An AI-powered voice receptionist for Kanmani Clinic that lets patients book, res
 
 > Password-protected — contact for access credentials.
 
-**Live:** https://kanmani-clinic.vercel.app  
-**Backend API:** https://aria-receptionist-backend.onrender.com
+**Live:** [https://kanmani-clinic.vercel.app](https://ai-receptionist-ten-plum.vercel.app/)  
 
 ---
 
