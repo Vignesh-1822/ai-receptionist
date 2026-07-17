@@ -1,5 +1,6 @@
 import os
 import json
+import httpx
 from openai import OpenAI
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -10,12 +11,33 @@ from services.calendar_service import update_appointment, delete_appointment
 
 load_dotenv()
 
-supabase: Client = create_client(
-    os.environ["SUPABASE_URL"],
-    os.environ["SUPABASE_SERVICE_KEY"],
-)
-
 _openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+# Supabase client is created lazily (not at import time) and rebuilt on a
+# connection/DNS failure — Render's free tier can cold-start with outbound
+# DNS not fully ready yet, which otherwise wedges a client created eagerly
+# at module load for the rest of the process's life.
+_supabase: Client | None = None
+
+
+def get_supabase() -> Client:
+    global _supabase
+    if _supabase is None:
+        _supabase = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        )
+    return _supabase
+
+
+def run_supabase(query):
+    """Run a Supabase query, rebuilding the client and retrying once on a connect/DNS error."""
+    global _supabase
+    try:
+        return query(get_supabase())
+    except httpx.ConnectError:
+        _supabase = None
+        return query(get_supabase())
 
 _SYSTEM_PROMPT = (
     "You are a data extraction assistant. Extract booking details "
@@ -79,7 +101,9 @@ async def extract_booking_from_transcript(
 
 async def save_booking(booking: BookingCreate) -> Booking:
     try:
-        response = supabase.table("bookings").insert(booking.model_dump(exclude_none=True)).execute()
+        response = run_supabase(
+            lambda db: db.table("bookings").insert(booking.model_dump(exclude_none=True)).execute()
+        )
         record = response.data[0]
         return Booking(**record)
     except Exception as e:
@@ -88,8 +112,8 @@ async def save_booking(booking: BookingCreate) -> Booking:
 
 
 async def get_bookings_by_phone(phone_number: str) -> list[Booking]:
-    response = (
-        supabase.table("bookings")
+    response = run_supabase(
+        lambda db: db.table("bookings")
         .select("*")
         .eq("phone_number", phone_number)
         .eq("status", "confirmed")
@@ -100,7 +124,9 @@ async def get_bookings_by_phone(phone_number: str) -> list[Booking]:
 
 
 async def reschedule_booking(booking_id: str, new_date: str, new_time: str) -> Booking:
-    response = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    response = run_supabase(
+        lambda db: db.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    )
     if not response.data:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -114,8 +140,8 @@ async def reschedule_booking(booking_id: str, new_date: str, new_time: str) -> B
         except Exception as e:
             print(f"Calendar update failed (continuing with DB update): {e}")
 
-    updated = (
-        supabase.table("bookings")
+    updated = run_supabase(
+        lambda db: db.table("bookings")
         .update({"date": new_date, "time": new_time})
         .eq("id", booking_id)
         .execute()
@@ -124,7 +150,9 @@ async def reschedule_booking(booking_id: str, new_date: str, new_time: str) -> B
 
 
 async def cancel_booking(booking_id: str) -> Booking:
-    response = supabase.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    response = run_supabase(
+        lambda db: db.table("bookings").select("*").eq("id", booking_id).limit(1).execute()
+    )
     if not response.data:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -135,8 +163,8 @@ async def cancel_booking(booking_id: str) -> Booking:
         except Exception as e:
             print(f"Calendar delete failed (continuing with DB update): {e}")
 
-    updated = (
-        supabase.table("bookings")
+    updated = run_supabase(
+        lambda db: db.table("bookings")
         .update({"status": "cancelled"})
         .eq("id", booking_id)
         .execute()

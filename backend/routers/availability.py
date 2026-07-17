@@ -4,7 +4,7 @@ from models.booking import Booking, BookingCreate
 from services.calendar_service import get_available_slots, create_appointment
 from services.booking_service import (
     save_booking,
-    supabase,
+    run_supabase,
     get_bookings_by_phone,
     reschedule_booking,
     cancel_booking,
@@ -82,7 +82,9 @@ async def confirm_booking(request: Request, background_tasks: BackgroundTasks):
             duration_minutes=duration,
             phone_number=booking_data.phone_number,
         )
-        supabase.table("bookings").update({"google_event_id": event_id}).eq("id", saved.id).execute()
+        run_supabase(
+            lambda db: db.table("bookings").update({"google_event_id": event_id}).eq("id", saved.id).execute()
+        )
         saved.google_event_id = event_id
     except Exception as e:
         print(f"[confirm_booking] calendar error (booking saved): {e}")
@@ -141,10 +143,14 @@ async def cancel_appointment(request: Request):
 
 @router.get("/bookings/{call_id}", response_model=Booking)
 async def get_booking_by_call_id(call_id: str) -> Booking:
-    response = supabase.table("bookings").select("*").eq("call_id", call_id).limit(1).execute()
+    response = run_supabase(
+        lambda db: db.table("bookings").select("*").eq("call_id", call_id).limit(1).execute()
+    )
     if response.data:
         return Booking(**response.data[0])
-    fallback = supabase.table("bookings").select("*").order("created_at", desc=True).limit(1).execute()
+    fallback = run_supabase(
+        lambda db: db.table("bookings").select("*").order("created_at", desc=True).limit(1).execute()
+    )
     if not fallback.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     return Booking(**fallback.data[0])
